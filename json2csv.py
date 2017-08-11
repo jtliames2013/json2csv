@@ -12,6 +12,7 @@ from collections import OrderedDict
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
+MAX_LINES=1000
 
 class Json2Csv(object):
     """Process a JSON object to a CSV file"""
@@ -90,7 +91,7 @@ class Json2Csv(object):
         else:
             return unicode(item)
 
-    def write_csv(self, filename='output.csv', make_strings=False):
+    def write_csv(self, filename='output.csv', make_strings=False, write_header=False):
         """Write the processed rows to the given filename
         """
         if (len(self.rows) <= 0):
@@ -99,24 +100,28 @@ class Json2Csv(object):
             out = self.make_strings()
         else:
             out = self.rows
-        with open(filename, 'wb+') as f:
+        with open(filename, 'ab+') as f:
             writer = csv.DictWriter(f, self.key_map.keys())
-            writer.writeheader()
+            if write_header == True:
+                writer.writeheader()
             writer.writerows(out)
 
 
 class MultiLineJson2Csv(Json2Csv):
-    def load(self, json_file):
-        self.process_each(json_file)
+    def load(self, json_file, filename='output.csv', make_strings=False):
+        self.process_each(json_file, filename, make_strings)
 
-    def process_each(self, data, collection=None):
+    def process_each(self, data, filename='output.csv', make_strings=False):
         """Load each line of an iterable collection (ie. file)"""
+        i = 0
         for line in data:
             d = json.loads(line)
-            if self.collection in d:
-                d = d[self.collection]
             self.rows.append(self.process_row(d))
-
+            i += 1
+            if i % MAX_LINES == 0:
+                write_header = i==MAX_LINES
+                self.write_csv(filename, make_strings, write_header)
+                self.rows = []
 
 def init_parser():
     import argparse
@@ -145,11 +150,9 @@ if __name__ == '__main__':
     else:
         loader = Json2Csv(key_map)
 
-    loader.load(args.json_file)
-
     outfile = args.output_csv
     if outfile is None:
         fileName, fileExtension = os.path.splitext(args.json_file.name)
         outfile = fileName + '.csv'
 
-    loader.write_csv(filename=outfile, make_strings=args.strings)
+    loader.load(args.json_file, filename=outfile, make_strings=args.strings)
