@@ -114,12 +114,18 @@ class MultiLineJson2Csv(Json2Csv):
     def process_each(self, data, filename='output.csv', make_strings=False):
         """Load each line of an iterable collection (ie. file)"""
         i = 0
+        size = sum(1 for line in data)
+        data.seek(0)
+        has_write_header = False
         for line in data:
             d = json.loads(line)
             self.rows.append(self.process_row(d))
             i += 1
-            if i % MAX_LINES == 0:
-                write_header = i==MAX_LINES
+            if i % MAX_LINES == 0 or i == size:
+                write_header = False
+                if has_write_header == False and (i == MAX_LINES or i == size):
+                    has_write_header = True
+                    write_header = True
                 self.write_csv(filename, make_strings, write_header)
                 self.rows = []
 

@@ -9,10 +9,10 @@ def key_paths(d):
             for k, v in x.iteritems():
                 for ret in helper(path + [k], v):
                     yield ret
-        elif isinstance(x, list):
-            for i, item in enumerate(x):
-                for ret in helper(path + [i], item):
-                    yield ret
+        #elif isinstance(x, list):
+        #    for i, item in enumerate(x):
+        #        for ret in helper(path + [i], item):
+        #            yield ret
         else:
             yield path
     return helper([], d)
